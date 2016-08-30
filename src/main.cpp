@@ -72,24 +72,64 @@ std::tuple<int, int, int, int> get_game_region(const CImg<unsigned char>& img) {
 void print_board(const CImg<unsigned char>& game) {
     static const int center_xs[] = {50, 150, 250, 350, 450, 550};
     static const int center_ys[] = {50, 150, 250, 350, 450, 550};
+    static const int boarder_xs[] = {100, 200, 300, 400, 500};
+    static const int boarder_ys[] = {100, 200, 300, 400, 500};
 
-    std::cout<<"--------------"<<std::endl;
+    char game_grid[11][11];
+    //Detect blocks
     for (const auto& row : center_ys) {
-        std::cout<<"|";
         for (const auto& col : center_xs) {
-            if (game(col, row, 0, 0) >= 150) {
-                std::cout<<"* ";
+            int red = game(col, row, 0, 0);
+            if (red >= 150) {
+                int green = game(col, row, 0, 1);
+                game_grid[(row-50)/50][(col-50)/50] = green > 50 ? '*' : '$';
             } else {
-                std::cout<<"  ";
+                game_grid[(row-50)/50][(col-50)/50] = ' ';
             }
         }
-        std::cout<<"|"<<std::endl;
     }
-    std::cout<<"--------------"<<std::endl;
+    //Detect vertical boarders
+    for (const auto& row : center_ys) {
+        for (const auto& col : boarder_xs) {
+            int red = game(col, row, 0, 0);
+            if (red < 150) {
+                game_grid[(row-50)/50][(col-50)/50] = '|';
+            } else {
+                game_grid[(row-50)/50][(col-50)/50] = ' ';
+            }
+        }
+    }
+    //Detect horizontal boarders
+    for (const auto& row : boarder_ys) {
+        for (const auto& col : center_xs) {
+            int red = game(col, row, 0, 0);
+            if (red < 150) {
+                game_grid[(row-50)/50][(col-50)/50] = '-';
+            } else {
+                game_grid[(row-50)/50][(col-50)/50] = ' ';
+            }
+        }
+    }
+    //Clear everything else
+    for (const auto& row : boarder_ys) {
+        for (const auto& col : boarder_xs) {
+            game_grid[(row-50)/50][(col-50)/50] = '+';
+        }
+    }
+
+    std::cout<<"/----------------------\\"<<std::endl;
+    for (int row = 0; row < 11; ++row) {
+        std::cout<<'|';
+        for (int col = 0; col < 11; ++col) {
+            std::cout<<game_grid[row][col]<<' ';
+        }
+        std::cout<<'|'<<std::endl;
+    }
+    std::cout<<"\\----------------------/"<<std::endl;
 }
 
 int main() {
-    CImg<unsigned char> image("puzzles/images/puzzle1.jpg"), visu(500,400,1,3,0);
+    CImg<unsigned char> image("puzzles/images/puzzle3.png"), visu(500,400,1,3,0);
 
     std::cout<<"Image dimensions: "<<image.width()<<" X "<<image.height()<<std::endl;
 
