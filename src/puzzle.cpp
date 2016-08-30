@@ -138,7 +138,17 @@ std::vector<Block> get_blocks(const CImg<unsigned char>& game_image) {
             break;
         }
     }
-
+    /*
+    for (const auto& block : ret) {
+        std::cout<<"Block {"<<std::endl;
+        std::cout<<"\tr: "<<(int)block.r<<std::endl;
+        std::cout<<"\tc: "<<(int)block.c<<std::endl;
+        std::cout<<"\tlength: "<<(int)block.length<<std::endl;
+        std::cout<<"\torientation: "<<block.orientation<<std::endl;
+        std::cout<<"}"<<std::endl;
+        std::cout<<std::endl;
+    }
+    */
     return ret;
 }
 
@@ -192,10 +202,14 @@ std::ostream& operator<<(std::ostream& out, const Puzzle& p) {
         for (size_t i = 0; i < block.length; i++) {
             if (block.orientation) {
                 grid[2*block.r][2*(block.c + i)] = '*';
-                grid[2*block.r][2*(block.c + i) + 1] = i + 1 < block.length ? ' ' : '|';
+                if (2*(block.c + i) + 1 < 11) {
+                    grid[2*block.r][2*(block.c + i) + 1] = i + 1 < block.length ? ' ' : '|';
+                }
             } else {
                 grid[2*(block.r + i)][2*block.c] = '*';
-                grid[2*(block.r + i) + 1][2*block.c] = i + 1 < block.length ? ' ' : '-';
+                if (2*(block.r + i) + 1 << 11) {
+                    grid[2*(block.r + i) + 1][2*block.c] = i + 1 < block.length ? ' ' : '-';
+                }
             }
         }
     }
@@ -209,13 +223,13 @@ std::ostream& operator<<(std::ostream& out, const Puzzle& p) {
         }
     }
 
-    std::cout<<"/----------------------\\"<<std::endl;
+    std::cout<<"/-----------------------\\"<<std::endl;
     for (int row = 0; row < 11; ++row) {
-        std::cout<<'|';
+        std::cout<<"| ";
         for (int col = 0; col < 11; ++col) {
             std::cout<<grid[row][col]<<' ';
         }
         std::cout<<'|'<<std::endl;
     }
-    std::cout<<"\\----------------------/"<<std::endl;
+    std::cout<<"\\-----------------------/"<<std::endl;
 }
