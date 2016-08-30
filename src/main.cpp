@@ -69,8 +69,27 @@ std::tuple<int, int, int, int> get_game_region(const CImg<unsigned char>& img) {
     return std::make_tuple(std::max(0, x_start), std::max(0, y_start), x_end, y_end);
 }
 
+void print_board(const CImg<unsigned char>& game) {
+    static const int center_xs[] = {50, 150, 250, 350, 450, 550};
+    static const int center_ys[] = {50, 150, 250, 350, 450, 550};
+
+    std::cout<<"--------------"<<std::endl;
+    for (const auto& row : center_ys) {
+        std::cout<<"|";
+        for (const auto& col : center_xs) {
+            if (game(col, row, 0, 0) >= 150) {
+                std::cout<<"* ";
+            } else {
+                std::cout<<"  ";
+            }
+        }
+        std::cout<<"|"<<std::endl;
+    }
+    std::cout<<"--------------"<<std::endl;
+}
+
 int main() {
-    CImg<unsigned char> image("puzzles/images/puzzle3.png"), visu(500,400,1,3,0);
+    CImg<unsigned char> image("puzzles/images/puzzle1.jpg"), visu(500,400,1,3,0);
 
     std::cout<<"Image dimensions: "<<image.width()<<" X "<<image.height()<<std::endl;
 
@@ -79,6 +98,7 @@ int main() {
 
     int x1, y1, x2, y2;
     std::tie(x1, y1, x2, y2) = get_game_region(image.get_blur(1.5));
+    print_board(image.get_crop(x1, y1, x2, y2).get_resize(600, 600));
     image.draw_rectangle(x1, y1, x2, y2, white, 1, ~0);
 
     CImgDisplay main_disp(image,"Click a point"), draw_disp(visu,"Intensity profile");
