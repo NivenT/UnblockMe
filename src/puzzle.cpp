@@ -1,5 +1,6 @@
-#include <iostream>
 #include <algorithm>
+#include <iostream>
+#include <fstream>
 #include <tuple>
 
 #include <CImg.h>
@@ -12,14 +13,7 @@ bool line_contains_blocks(const CImg<unsigned char>& red_channel, const CImg<uns
     auto red_count = std::count_if(red_channel.begin(), red_channel.end(), [](auto red) {
         return red >= 200;
     });
-    auto green_count = std::count_if(green_channel.begin(), green_channel.end(), [](auto green) {
-        return green >= 200;
-    });
-    auto blue_count = std::count_if(blue_channel.begin(), blue_channel.end(), [](auto blue) {
-        return blue >= 200;
-    });
-
-    return red_count >= .26*red_channel.width() && blue_count <= .13*blue_channel.width() && green_count <= .26*green_channel.width();
+    return red_count >= .26*red_channel.width();
 }
 
 bool line_is_blank(const CImg<unsigned char>& red_channel, const CImg<unsigned char>& green_channel, const CImg<unsigned char>& blue_channel) {
@@ -33,13 +27,12 @@ bool line_is_blank(const CImg<unsigned char>& red_channel, const CImg<unsigned c
     auto blue_count = std::count_if(blue_channel.begin(), blue_channel.end(), [](auto blue) {
         return blue <= 20;
     });
-
     return red_count >= threshold && blue_count >= threshold && green_count >= threshold;
 }
 
 std::tuple<int, int, int, int> get_game_region(const CImg<unsigned char>& img) {
     int y_start = -1, y_end = img.height()-1;
-    for (std::size_t line = 0; line < img.height(); ++line) {
+    for (size_t line = 0; line < img.height(); ++line) {
         auto red_channel = img.get_crop(0, line, 0, 0, img.width()-1, line, 0, 0);
         auto green_channel = img.get_crop(0, line, 0, 1, img.width()-1, line, 0, 1);
         auto blue_channel = img.get_crop(0, line, 0, 2, img.width()-1, line, 0, 2);
@@ -52,56 +45,37 @@ std::tuple<int, int, int, int> get_game_region(const CImg<unsigned char>& img) {
             }
         }
     }
+    y_start = std::max(y_start, 0);
 
     int x_start = -1, x_end = img.width()-1;
-    for (std::size_t column = 0; column < img.width(); ++column) {
-        int red = img(column, y_start, 0, 0);
-        int green = img(column, y_start, 0, 1);
-        int blue = img(column, y_start, 0, 2);
+    int y = (y_start+3*y_end)/4; //Get a line in the lower part, since it will be more "typical" than the top or middle
+    for (size_t column = 0; column < img.width(); ++column) {
+        int red = img(column, y, 0, 0);
+        int green = img(column, y, 0, 1);
+        int blue = img(column, y, 0, 2);
 
-        if (red + green + blue < 200) {
+        if (red + green + blue < 220) {
             if (x_start == -1) {
-                x_start = column;
+                int nearby_red = img(std::max<int>(column, 5)-5, y, 0, 0);
+                x_start = nearby_red > 120 ? column : x_start;
             } else {
-                x_end = column;
+                int nearby_red = img(std::max<int>(column, 5)+5, y, 0, 0);
+                int nearby_blue = img(std::max<int>(column, 5)+5, y, 0, 2);
+                x_end = (nearby_red >= 150 && nearby_blue < 30) || (nearby_blue < 70 && nearby_red >= 100) ? column : x_end;
             }
         }
     }
+    x_start = std::max(x_start, 0);
 
-    return std::make_tuple(std::max(0, x_start), std::max(0, y_start), x_end, y_end);
+    return std::make_tuple(x_start, y_start, x_end, y_end);
 }
 
-std::vector<Block> get_blocks(const CImg<unsigned char>& game_image) {
-    static const int center_xs[] = {50, 150, 250, 350, 450, 550};
-    static const int center_ys[] = {50, 150, 250, 350, 450, 550};
-    static const int boarder_xs[] = {100, 200, 300, 400, 500};
-    static const int boarder_ys[] = {100, 200, 300, 400, 500};
-
-    bool game_grid[11][11]; ///true means block/boarder
-    //Detect blocks
-    for (const auto& row : center_ys) {
-        for (const auto& col : center_xs) {
-            game_grid[(row-50)/50][(col-50)/50] = game_image(col, row, 0, 0) >= 150;
-        }
-    }
-    //Detect horizontal boarders
-    for (const auto& row : boarder_ys) {
-        for (const auto& col : center_xs) {
-            game_grid[(row-50)/50][(col-50)/50] = game_image(col, row, 0, 0) < 150;
-        }
-    }
-    //Detect vertical boarders
-    for (const auto& row : center_ys) {
-        for (const auto& col : boarder_xs) {
-            game_grid[(row-50)/50][(col-50)/50] = game_image(col, row, 0, 0) < 150;
-        }
-    }
-
+std::vector<Block> get_blocks(uint8_t game_grid[11][11]) {
     //Extract block positions
     std::vector<Block> ret;
     bool visited[6][6] = {false};
-    for (int row = 0; row < 6; ++row) {
-        for (int col = 0; col < 6; ++col) {
+    for (size_t row = 0; row < 6; ++row) {
+        for (size_t col = 0; col < 6; ++col) {
             if (!visited[row][col]) {
                 visited[row][col] = true;
                 if (game_grid[2*row][2*col]) {
@@ -111,13 +85,13 @@ std::vector<Block> get_blocks(const CImg<unsigned char>& game_image) {
                     block.length = 1;
 
                     int curr_row = row, curr_col = col;
-                    while (curr_row < 5 && !game_grid[2*curr_row+1][2*curr_col]) {
+                    while (curr_row < 5 && !game_grid[2*curr_row+1][2*curr_col] && game_grid[2*(curr_row+1)][2*curr_col]) {
                         //There's a part of the same block beneath this part
                         ++block.length;
                         block.orientation = false;
                         visited[++curr_row][curr_col] = true;
                     }
-                    while (curr_col < 5 && !game_grid[2*curr_row][2*curr_col+1]) {
+                    while (curr_col < 5 && !game_grid[2*curr_row][2*curr_col+1] && game_grid[2*curr_row][2*(curr_col+1)]) {
                         //There's a part of the same block next to this part
                         ++block.length;
                         block.orientation = true;
@@ -132,13 +106,12 @@ std::vector<Block> get_blocks(const CImg<unsigned char>& game_image) {
 
     //move red block to the end
     for (auto& block : ret) {
-        int green = game_image(block.c*100 + 50, block.r*100 + 50, 0, 1);
-        if (green < 50) {
+        if (game_grid[block.r*2][block.c*2] == 2) {
             std::swap(block, ret.back());
             break;
         }
     }
-    /*
+    /**
     for (const auto& block : ret) {
         std::cout<<"Block {"<<std::endl;
         std::cout<<"\tr: "<<(int)block.r<<std::endl;
@@ -148,11 +121,45 @@ std::vector<Block> get_blocks(const CImg<unsigned char>& game_image) {
         std::cout<<"}"<<std::endl;
         std::cout<<std::endl;
     }
-    */
+    /**/
     return ret;
 }
 
+std::vector<Block> get_blocks(const CImg<unsigned char>& game_image) {
+    static const int center_xs[] = {50, 150, 250, 350, 450, 550};
+    static const int center_ys[] = {50, 150, 250, 350, 450, 550};
+    static const int boarder_xs[] = {100, 200, 300, 400, 500};
+    static const int boarder_ys[] = {100, 200, 300, 400, 500};
+
+    uint8_t game_grid[11][11]; ///1 means block/boarder, 2 means red block
+    //Detect blocks
+    for (const auto& row : center_ys) {
+        for (const auto& col : center_xs) {
+            game_grid[(row-50)/50][(col-50)/50] = game_image(col, row, 0, 0) < 180 ? 0 :
+                                                  game_image(col, row, 0, 1) >= 50 ? 1 : 2;
+        }
+    }
+    //Detect horizontal boarders
+    for (const auto& row : boarder_ys) {
+        for (const auto& col : center_xs) {
+            game_grid[(row-50)/50][(col-50)/50] = game_image(col, row, 0, 0) < 180;
+        }
+    }
+    //Detect vertical boarders
+    for (const auto& row : center_ys) {
+        for (const auto& col : boarder_xs) {
+            game_grid[(row-50)/50][(col-50)/50] = game_image(col, row, 0, 0) < 180;
+        }
+    }
+
+    return get_blocks(game_grid);
+}
+
 Puzzle::Puzzle() {
+}
+
+Puzzle::~Puzzle() {
+    m_blocks.clear();
 }
 
 Puzzle Puzzle::from_image(const std::string& path, float blur) {
@@ -168,6 +175,50 @@ Puzzle Puzzle::from_image(const std::string& path, float blur) {
         ret.m_blocks.pop_back();
     }
     return ret;
+}
+
+Puzzle Puzzle::from_file(const std::string& path) {
+    std::ifstream file(path.c_str());
+    char* file_grid[11];
+
+    std::string line;
+    std::getline(file, line); //First line is useless
+    for (size_t i = 0; i < 11; ++i) {
+        std::getline(file, line);
+
+        file_grid[i] = new char[line.size()];
+        strcpy(file_grid[i], line.c_str());
+    }
+    file.close();
+
+    uint8_t game_grid[11][11];
+    for (size_t row = 0; row < 11; ++row) {
+        for (size_t col = 0; col < 11; ++col) {
+            char c = file_grid[row][2*(col+1)];
+            game_grid[row][col] = (c == '*' || c == '|' || c == '-') ? 1 :
+                                  (c == '$')                         ? 2 : 0;
+        }
+    }
+
+    for (size_t i = 0; i < 11; ++i) {
+        delete[] file_grid[i];
+    }
+
+    Puzzle ret;
+    ret.m_blocks = get_blocks(game_grid);
+    if (ret.m_blocks.size() > 0) {
+        ret.m_red_block = ret.m_blocks.back();
+        ret.m_blocks.pop_back();
+    }
+    return ret;
+}
+
+bool Puzzle::to_file(const std::string& path) {
+    std::ofstream file(path.c_str());
+    if (!file.is_open()) return false;
+    file<<*this;
+    file.close();
+    return true;
 }
 
 std::ostream& operator<<(std::ostream& out, const Puzzle& p) {
@@ -223,13 +274,14 @@ std::ostream& operator<<(std::ostream& out, const Puzzle& p) {
         }
     }
 
-    std::cout<<"/-----------------------\\"<<std::endl;
-    for (int row = 0; row < 11; ++row) {
-        std::cout<<"| ";
-        for (int col = 0; col < 11; ++col) {
-            std::cout<<grid[row][col]<<' ';
+    out<<"/-----------------------\\"<<std::endl;
+    for (size_t row = 0; row < 11; ++row) {
+        out<<"| ";
+        for (size_t col = 0; col < 11; ++col) {
+            out<<grid[row][col]<<' ';
         }
-        std::cout<<'|'<<std::endl;
+        out<<'|'<<std::endl;
     }
-    std::cout<<"\\-----------------------/"<<std::endl;
+    out<<"\\-----------------------/"<<std::endl;
+    return out;
 }

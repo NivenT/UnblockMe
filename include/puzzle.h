@@ -13,7 +13,12 @@ struct Block {
 
 class Puzzle {
 public:
+    ~Puzzle();
+
+    bool to_file(const std::string& path);
+
     static Puzzle from_image(const std::string& path, float blur = 1.5);
+    static Puzzle from_file(const std::string& path);
 
     friend std::ostream& operator<<(std::ostream&, const Puzzle&);
 private:
