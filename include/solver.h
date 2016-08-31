@@ -69,6 +69,7 @@ private:
             return (lhs->length() + heuristic(lhs->get_end())) > (rhs->length() + heuristic(rhs->get_end()));
         }
     };
+    static bool puzzle_is_solved(const Puzzle& p);
     static int heuristic(const Puzzle& p); //lower bound for number of remaining moves
 
     std::priority_queue<Path*, std::vector<Path*>, PathCompare> m_paths;

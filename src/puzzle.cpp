@@ -271,6 +271,14 @@ bool Puzzle::to_file(const std::string& path) const {
     return true;
 }
 
+bool Puzzle::operator==(const Puzzle& rhs) const {
+    if (m_blocks.size() != rhs.m_blocks.size() || m_blocks.back() != rhs.m_blocks.back()) return false;
+    for (const auto& block : m_blocks) {
+        if (std::find(rhs.m_blocks.begin(), rhs.m_blocks.end()-1, block) == rhs.m_blocks.end()-1) return false;
+    }
+    return true;
+}
+
 std::ostream& operator<<(std::ostream& out, const Puzzle& p) {
     char grid[11][11];
     //block locations

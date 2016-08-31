@@ -17,6 +17,12 @@ struct Block {
     bool is_in_bounds() const {
         return c < 6 && r < 6 && (orientation ? c + length < 7 : r + length < 7);
     }
+    bool operator==(const Block& rhs) const {
+        return r == rhs.r && c == rhs.c && length == rhs.length && orientation == rhs.orientation;
+    }
+    bool operator!=(const Block& rhs) const {
+        return !(*this == rhs);
+    }
 
     uint8_t r, c;           //location of top left block
     uint8_t length;
@@ -40,6 +46,8 @@ public:
 
     static Puzzle from_image(const std::string& path, float blur = 1.5);
     static Puzzle from_file(const std::string& path);
+
+    bool operator==(const Puzzle& rhs) const;
 
     friend std::ostream& operator<<(std::ostream&, const Puzzle&);
     friend std::hash<Puzzle>;
