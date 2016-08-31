@@ -22,15 +22,7 @@ bool Solver::puzzle_is_solved(const Puzzle& p) {
 }
 
 int Solver::heuristic(const Puzzle& p) {
-    static const int cols[] = {0, 1, 2, 3, 4, 5};
-    int row = p.get_red_block().r;
-    return std::count_if(cols, cols + 6, [&](int col) {
-        Block square;
-        square.r = row;
-        square.c = col;
-        square.length = 1;
-        return p.is_overlapping(square);
-    }) - 2;
+    return 0; ///Previous heurisitc was not a strict lower bound and the program runs fast enough without needing a heurisitic
 }
 
 Path* Solver::solve_puzzle(const Puzzle& p) {
