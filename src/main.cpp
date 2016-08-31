@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "puzzle.h"
+#include "solver.h"
 
 using namespace std;
 

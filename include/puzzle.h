@@ -36,14 +36,15 @@ public:
     std::vector<Move> get_valid_moves() const;
     Puzzle make_move(const Move& m) const;
     bool to_file(const std::string& path) const;
+    bool is_overlapping(const Block& blk1, uint8_t index_to_ignore = -1) const;
 
     static Puzzle from_image(const std::string& path, float blur = 1.5);
     static Puzzle from_file(const std::string& path);
 
     friend std::ostream& operator<<(std::ostream&, const Puzzle&);
+    friend std::hash<Puzzle>;
 private:
     Puzzle();   ///Puzzles only constructable using static methods
-    bool is_overlapping(const Block& blk1, uint8_t index_to_ignore) const;
 
     std::vector<Block> m_blocks;    //The last block is the red one
 };
