@@ -170,10 +170,6 @@ Puzzle Puzzle::from_image(const std::string& path, float blur) {
 
     Puzzle ret;
     ret.m_blocks = get_blocks(image.crop(x0, y0, x1, y1).resize(600, 600));
-    if (ret.m_blocks.size() > 0) {
-        ret.m_red_block = ret.m_blocks.back();
-        ret.m_blocks.pop_back();
-    }
     return ret;
 }
 
@@ -206,14 +202,68 @@ Puzzle Puzzle::from_file(const std::string& path) {
 
     Puzzle ret;
     ret.m_blocks = get_blocks(game_grid);
-    if (ret.m_blocks.size() > 0) {
-        ret.m_red_block = ret.m_blocks.back();
-        ret.m_blocks.pop_back();
+    return ret;
+}
+
+bool Puzzle::is_overlapping(const Block& blk1, uint8_t index_to_ignore) const {
+    uint8_t r00 = blk1.r, r01 = blk1.r,     //range of rows occupied by blk1
+            c00 = blk1.c, c01 = blk1.c;
+    if (blk1.orientation) {
+        c01 += blk1.length - 1;
+    } else {
+        r01 += blk1.length - 1;
+    }
+
+    for (size_t i = 0; i < m_blocks.size(); ++i) {
+        if (i == index_to_ignore) continue; //Dont wanna check against yourself
+
+        const Block& blk2 = m_blocks[i];
+        uint8_t r10 = blk2.r, r11 = blk2.r,
+                c10 = blk2.c, c11 = blk2.c;
+        if (blk2.orientation) {
+            c11 += blk2.length - 1;
+        } else {
+            r11 += blk2.length - 1;
+        }
+
+        if (r00 > r11 || c00 > c11 || r10 > r01 || c10 > c01) continue;
+        return true;
+    }
+    return false;
+}
+
+std::vector<Move> Puzzle::get_valid_moves() const {
+    std::vector<Move> ret;
+    for (size_t i = 0; i < m_blocks.size(); ++i) {
+        Move curr;
+        curr.index = i;
+        for (const auto& dir : {false, true}) {
+            curr.direction = dir;
+            curr.num_steps = 0;
+
+            Block temp = m_blocks[i];
+            while (temp.advance(dir).is_in_bounds() && !is_overlapping(temp, i)) {
+                ++curr.num_steps;
+                ret.push_back(curr);
+            }
+        }
     }
     return ret;
 }
 
-bool Puzzle::to_file(const std::string& path) {
+Puzzle Puzzle::make_move(const Move& m) const {
+    Puzzle ret = *this;
+    if (m.index < ret.m_blocks.size()) {
+        Block temp = ret.m_blocks[m.index];
+        uint8_t num_steps = m.num_steps;
+
+        while (num_steps--) temp.advance(m.direction);
+        if (temp.is_in_bounds() && !is_overlapping(temp, m.index)) ret.m_blocks[m.index] = temp;
+    }
+    return ret;
+}
+
+bool Puzzle::to_file(const std::string& path) const {
     std::ofstream file(path.c_str());
     if (!file.is_open()) return false;
     file<<*this;
@@ -258,19 +308,18 @@ std::ostream& operator<<(std::ostream& out, const Puzzle& p) {
                 }
             } else {
                 grid[2*(block.r + i)][2*block.c] = '*';
-                if (2*(block.r + i) + 1 << 11) {
+                if (2*(block.r + i) + 1 < 11) {
                     grid[2*(block.r + i) + 1][2*block.c] = i + 1 < block.length ? ' ' : '-';
                 }
             }
         }
     }
-    for (size_t i = 0; i < p.m_red_block.length; i++) {
-        if (p.m_red_block.orientation) {
-            grid[2*p.m_red_block.r][2*(p.m_red_block.c + i)] = '$';
-            grid[2*p.m_red_block.r][2*(p.m_red_block.c + i) + 1] = i + 1 < p.m_red_block.length ? ' ' : '|';
+    for (size_t i = 0; i < p.m_blocks.back().length; i++) {
+        const Block& red_block = p.m_blocks.back();
+        if (red_block.orientation) {
+            grid[2*red_block.r][2*(red_block.c + i)] = '$';
         } else {
-            grid[2*(p.m_red_block.r + i)][2*p.m_red_block.c] = '$';
-            grid[2*(p.m_red_block.r + i) + 1][2*p.m_red_block.c] = i + 1 < p.m_red_block.length ? ' ' : '-';
+            grid[2*(red_block.r + i)][2*red_block.c] = '$';
         }
     }
 
