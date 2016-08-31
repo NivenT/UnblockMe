@@ -11,7 +11,7 @@ int main() {
 
     cout<<puzzle<<endl;
 
-    Path* solution = solver.solve_puzzle(puzzle);
+    auto solution = solver.solve_puzzle(puzzle);
     if (solution) {
         cout<<"Solved puzzle in "<<solution->length()<<" moves"<<endl;
 

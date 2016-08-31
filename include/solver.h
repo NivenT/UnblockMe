@@ -3,6 +3,7 @@
 
 #include <queue>
 #include <unordered_set>
+#include <memory>
 
 #include "puzzle.h"
 
@@ -43,33 +44,30 @@ struct Path {
     Path(const Puzzle& puz) : m_puz(puz), m_prior(nullptr) {
     }
     ~Path() {
-        if (m_prior) {
-            delete m_prior; //I don't think this is safe
-        }
     }
     int length() const {
         return m_prior ? 1 + m_prior->length() : 0;
     }
 
     const Puzzle m_puz;
-    Path* m_prior;
+    std::shared_ptr<Path> m_prior;
 };
 
 class Solver {
 public:
     Solver();
     ~Solver();
-    Path* solve_puzzle(const Puzzle& p);
+    std::shared_ptr<Path> solve_puzzle(const Puzzle& p);
 private:
     struct PathCompare {
-        bool operator()(const Path* lhs, const Path* rhs) {
+        bool operator()(const std::shared_ptr<Path> lhs, const std::shared_ptr<Path> rhs) {
             return (lhs->length() + heuristic(lhs->m_puz)) > (rhs->length() + heuristic(rhs->m_puz));
         }
     };
     static bool puzzle_is_solved(const Puzzle& p);
     static int heuristic(const Puzzle& p); //lower bound for number of remaining moves
 
-    std::priority_queue<Path*, std::vector<Path*>, PathCompare> m_paths;
+    std::priority_queue<std::shared_ptr<Path>, std::vector<std::shared_ptr<Path>>, PathCompare> m_paths;
     std::unordered_set<Puzzle> m_seen;
 };
 

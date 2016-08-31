@@ -25,15 +25,15 @@ int Solver::heuristic(const Puzzle& p) {
     return 0; ///Previous heurisitc was not a strict lower bound and the program runs fast enough without needing a heurisitic
 }
 
-Path* Solver::solve_puzzle(const Puzzle& p) {
+std::shared_ptr<Path> Solver::solve_puzzle(const Puzzle& p) {
     //Reset solver
     while (!m_paths.empty()) m_paths.pop();
     m_seen.clear();
 
     m_seen.insert(p);
-    m_paths.push(new Path(p));
+    m_paths.push(std::make_shared<Path>(p));
     while (!m_paths.empty()) {
-        Path* curr = m_paths.top(); m_paths.pop();
+        auto curr = m_paths.top(); m_paths.pop();
         const Puzzle& last = curr->m_puz;
 
         if (puzzle_is_solved(last)) return curr;
@@ -41,7 +41,7 @@ Path* Solver::solve_puzzle(const Puzzle& p) {
             Puzzle next = last.make_move(m);
             if (m_seen.find(next) != m_seen.end()) continue;
 
-            Path* child = new Path(next);
+            auto child = std::make_shared<Path>(next);
             child->m_prior = curr;
 
             m_paths.push(child);
