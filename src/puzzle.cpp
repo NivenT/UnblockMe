@@ -263,6 +263,10 @@ Puzzle Puzzle::make_move(const Move& m) const {
     return ret;
 }
 
+const Block& Puzzle::get_red_block() const {
+    return m_blocks.back();
+}
+
 bool Puzzle::to_file(const std::string& path) const {
     std::ofstream file(path.c_str());
     if (!file.is_open()) return false;
@@ -271,10 +275,12 @@ bool Puzzle::to_file(const std::string& path) const {
     return true;
 }
 
+#include <iostream>
+
 bool Puzzle::operator==(const Puzzle& rhs) const {
     if (m_blocks.size() != rhs.m_blocks.size() || m_blocks.back() != rhs.m_blocks.back()) return false;
-    for (const auto& block : m_blocks) {
-        if (std::find(rhs.m_blocks.begin(), rhs.m_blocks.end()-1, block) == rhs.m_blocks.end()-1) return false;
+    for (size_t i = 0; i < m_blocks.size()-1; ++i) {
+        if (std::find(rhs.m_blocks.begin(), rhs.m_blocks.end()-1, m_blocks[i]) == rhs.m_blocks.end()-1) return false;
     }
     return true;
 }
@@ -339,6 +345,6 @@ std::ostream& operator<<(std::ostream& out, const Puzzle& p) {
         }
         out<<'|'<<std::endl;
     }
-    out<<"\\-----------------------/"<<std::endl;
+    out<<"\\-----------------------/";
     return out;
 }

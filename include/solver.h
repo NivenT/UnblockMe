@@ -40,33 +40,30 @@ namespace std {
 }
 
 struct Path {
-    Path(const Puzzle& puz) : m_puz(puz), m_tail(nullptr) {
+    Path(const Puzzle& puz) : m_puz(puz), m_prior(nullptr) {
     }
     ~Path() {
-        if (m_tail) {
-            delete m_tail;
+        if (m_prior) {
+            delete m_prior;
         }
     }
-    const Puzzle& get_end() const {
-        return m_tail ? m_tail->get_end() : m_puz;
-    }
     int length() const {
-        return m_tail ? 1 + m_tail->length() : 0;
+        return m_prior ? 1 + m_prior->length() : 0;
     }
 
-    const Puzzle& m_puz;
-    Path* m_tail;
+    const Puzzle m_puz;
+    Path* m_prior;
 };
 
 class Solver {
 public:
     Solver();
     ~Solver();
-    Path solve_puzzle(const Puzzle& p);
+    Path* solve_puzzle(const Puzzle& p);
 private:
     struct PathCompare {
         bool operator()(const Path* lhs, const Path* rhs) {
-            return (lhs->length() + heuristic(lhs->get_end())) > (rhs->length() + heuristic(rhs->get_end()));
+            return (lhs->length() + heuristic(lhs->m_puz)) > (rhs->length() + heuristic(rhs->m_puz));
         }
     };
     static bool puzzle_is_solved(const Puzzle& p);

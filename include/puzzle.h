@@ -41,6 +41,7 @@ public:
 
     std::vector<Move> get_valid_moves() const;
     Puzzle make_move(const Move& m) const;
+    const Block& get_red_block() const;
     bool to_file(const std::string& path) const;
     bool is_overlapping(const Block& blk1, uint8_t index_to_ignore = -1) const;
 
