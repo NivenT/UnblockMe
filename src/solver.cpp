@@ -11,14 +11,14 @@ Solver::Solver() {
 }
 
 Solver::~Solver() {
+    m_seen.clear();
+    while (!m_paths.empty()) {
+        m_paths.pop();
+    }
 }
 
 bool Solver::puzzle_is_solved(const Puzzle& p) {
-    Block red = p.get_red_block();
-    red.c += red.length - 1;
-    red.length = 1;
-    while (red.advance(true).is_in_bounds() && !p.is_overlapping(red));
-    return red.c == 6;
+    return p.get_red_block().c == 4;
 }
 
 int Solver::heuristic(const Puzzle& p) {
@@ -32,10 +32,6 @@ int Solver::heuristic(const Puzzle& p) {
         return p.is_overlapping(square);
     }) - 2;
 }
-
-#include <iostream>
-
-using namespace std;
 
 Path* Solver::solve_puzzle(const Puzzle& p) {
     //Reset solver

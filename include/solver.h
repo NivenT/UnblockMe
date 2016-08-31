@@ -44,7 +44,7 @@ struct Path {
     }
     ~Path() {
         if (m_prior) {
-            delete m_prior;
+            delete m_prior; //I don't think this is safe
         }
     }
     int length() const {

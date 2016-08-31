@@ -275,8 +275,6 @@ bool Puzzle::to_file(const std::string& path) const {
     return true;
 }
 
-#include <iostream>
-
 bool Puzzle::operator==(const Puzzle& rhs) const {
     if (m_blocks.size() != rhs.m_blocks.size() || m_blocks.back() != rhs.m_blocks.back()) return false;
     for (size_t i = 0; i < m_blocks.size()-1; ++i) {
