@@ -7,7 +7,7 @@ using namespace std;
 
 int main() {
     Solver solver;
-    Puzzle puzzle = Puzzle::from_file("puzzles/files/puzzle5.puz");
+    Puzzle puzzle = Puzzle::from_image("puzzles/images/puzzle7.jpg");
 
     cout<<puzzle<<endl;
 

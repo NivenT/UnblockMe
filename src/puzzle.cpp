@@ -9,7 +9,7 @@
 
 using namespace cimg_library;
 
-bool line_contains_blocks(const CImg<unsigned char>& red_channel, const CImg<unsigned char>& green_channel, const CImg<unsigned char>& blue_channel) {
+bool line_contains_blocks(const CImg<unsigned char>& red_channel) {
     auto red_count = std::count_if(red_channel.begin(), red_channel.end(), [](auto red) {
         return red >= 200;
     });
@@ -17,38 +17,35 @@ bool line_contains_blocks(const CImg<unsigned char>& red_channel, const CImg<uns
 }
 
 bool line_is_blank(const CImg<unsigned char>& red_channel, const CImg<unsigned char>& green_channel, const CImg<unsigned char>& blue_channel) {
-    static const int threshold = .91*red_channel.width();
+    const int threshold = .88*red_channel.width();
     auto red_count = std::count_if(red_channel.begin(), red_channel.end(), [](auto red) {
-        return 60 <= red && red <= 80;
+        return 90 <= red && red <= 110;
     });
     auto green_count = std::count_if(green_channel.begin(), green_channel.end(), [](auto green) {
-        return 30 <= green && green <= 50;
+        return 50 <= green && green <= 80;
     });
     auto blue_count = std::count_if(blue_channel.begin(), blue_channel.end(), [](auto blue) {
-        return blue <= 20;
+        return blue <= 40;
     });
     return red_count >= threshold && blue_count >= threshold && green_count >= threshold;
 }
 
-std::tuple<int, int, int, int> get_game_region(const CImg<unsigned char>& img) {
-    int y_start = -1, y_end = img.height()-1;
-    for (size_t line = 0; line < img.height(); ++line) {
-        auto red_channel = img.get_crop(0, line, 0, 0, img.width()-1, line, 0, 0);
-        auto green_channel = img.get_crop(0, line, 0, 1, img.width()-1, line, 0, 1);
-        auto blue_channel = img.get_crop(0, line, 0, 2, img.width()-1, line, 0, 2);
+bool line_is_edge(const CImg<unsigned char>& red_channel, const CImg<unsigned char>& green_channel, const CImg<unsigned char>& blue_channel) {
+    const int threshold = .88*red_channel.width();
+    auto red_count = std::count_if(red_channel.begin(), red_channel.end(), [](auto red) {
+        return red <= 80;
+    });
+    auto green_count = std::count_if(green_channel.begin(), green_channel.end(), [](auto green) {
+        return green <= 60;
+    });
+    auto blue_count = std::count_if(blue_channel.begin(), blue_channel.end(), [](auto blue) {
+        return blue <= 40;
+    });
+    return red_count >= threshold && blue_count >= threshold && green_count >= threshold;
+}
 
-        if (line_contains_blocks(red_channel, green_channel, blue_channel) || line_is_blank(red_channel, green_channel, blue_channel)) {
-            if (y_start == -1) {
-                y_start = line;
-            } else {
-                y_end = line;
-            }
-        }
-    }
-    y_start = std::max(y_start, 0);
-
+std::tuple<int, int> get_x_bounds(const CImg<unsigned char>& img, int y) {
     int x_start = -1, x_end = img.width()-1;
-    int y = (y_start+3*y_end)/4; //Get a line in the lower part, since it will be more "typical" than the top or middle
     for (size_t column = 0; column < img.width(); ++column) {
         int red = img(column, y, 0, 0);
         int green = img(column, y, 0, 1);
@@ -57,7 +54,7 @@ std::tuple<int, int, int, int> get_game_region(const CImg<unsigned char>& img) {
         if (red + green + blue < 220) {
             if (x_start == -1) {
                 int nearby_red = img(std::max<int>(column, 5)-5, y, 0, 0);
-                x_start = nearby_red > 120 ? column : x_start;
+                x_start = nearby_red > 150 ? column : x_start;
             } else {
                 int nearby_red = img(std::max<int>(column, 5)+5, y, 0, 0);
                 int nearby_blue = img(std::max<int>(column, 5)+5, y, 0, 2);
@@ -65,7 +62,32 @@ std::tuple<int, int, int, int> get_game_region(const CImg<unsigned char>& img) {
             }
         }
     }
+    return std::make_tuple(x_start, x_end);
+}
+
+std::tuple<int, int, int, int> get_game_region(const CImg<unsigned char>& img) {
+    int x_start = -1, x_end = img.width()-1;
+    int y_start = -1, y_end = img.height()-1;
+    for (size_t line = 0; line < img.height(); ++line) {
+        auto red_channel = img.get_crop(x_start, line, 0, 0, x_end, line, 0, 0);
+        auto green_channel = img.get_crop(x_start, line, 0, 1, x_end, line, 0, 1);
+        auto blue_channel = img.get_crop(x_start, line, 0, 2, x_end, line, 0, 2);
+
+        if (line_is_edge(red_channel, green_channel, blue_channel) && line - y_start < img.height()/3) {
+            y_start = line;
+            std::tie(x_start, x_end) = get_x_bounds(img, line);
+        } else if (line_contains_blocks(red_channel) || line_is_blank(red_channel, green_channel, blue_channel)) {
+            if (y_start == -1) {
+                y_start = line;
+                std::tie(x_start, x_end) = get_x_bounds(img, line);
+            } else {
+                y_end = line;
+            }
+        }
+    }
+    std::tie(x_start, x_end) = get_x_bounds(img, (y_start+3*y_end)/4);
     x_start = std::max(x_start, 0);
+    y_start = std::max(y_start, 0);
 
     return std::make_tuple(x_start, y_start, x_end, y_end);
 }
