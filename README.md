@@ -8,7 +8,6 @@ This program loads an Unblock Me puzzle from a file (text or image), and then pr
   * The image loading is very crude, and not guarenteed to give the correct results
   * At the very least, it works on all the images the repo comes with
 * Currently, to change which puzzle is used, you have to manually change the code
-* Output is ASCII and not graphical
 
 ## Requirements
 * [CImg](http://cimg.eu/reference/structcimg__library_1_1CImg.html)

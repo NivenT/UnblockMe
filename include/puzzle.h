@@ -4,6 +4,8 @@
 #include <ostream>
 #include <vector>
 
+#include <CImg.h>
+
 struct Block {
     Block& advance(bool dir) {
         switch((orientation << 1) | dir) {
@@ -44,6 +46,7 @@ public:
     const Block& get_red_block() const;
     bool to_file(const std::string& path) const;
     bool is_overlapping(const Block& blk1, uint8_t index_to_ignore = -1) const;
+    cimg_library::CImg<unsigned char>& draw(cimg_library::CImg<unsigned char>& img) const;
 
     static Puzzle from_image(const std::string& path, float blur = 1.5);
     static Puzzle from_file(const std::string& path);

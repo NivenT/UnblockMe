@@ -1,16 +1,21 @@
 #include <iostream>
 #include <stack>
 
+#include <CImg.h>
+
 #include "solver.h"
 
+using namespace cimg_library;
 using namespace std;
 
 int main() {
     Solver solver;
     Puzzle puzzle = Puzzle::from_image("puzzles/images/puzzle7.jpg");
 
-    cout<<puzzle<<endl;
+    CImg<unsigned char> puzzle_image;
+    CImgDisplay disp;
 
+    cout<<puzzle<<endl;
     auto solution = solver.solve_puzzle(puzzle);
     if (solution) {
         cout<<"Solved puzzle in "<<solution->length()<<" moves"<<endl;
@@ -22,6 +27,8 @@ int main() {
         }
         while (!steps.empty()) {
             cout<<steps.top()<<endl;
+            steps.top().draw(puzzle_image).display(disp);
+
             cin.get();
             steps.pop();
         }

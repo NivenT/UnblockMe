@@ -3,8 +3,6 @@
 #include <fstream>
 #include <tuple>
 
-#include <CImg.h>
-
 #include "puzzle.h"
 
 using namespace cimg_library;
@@ -133,17 +131,6 @@ std::vector<Block> get_blocks(uint8_t game_grid[11][11]) {
             break;
         }
     }
-    /**
-    for (const auto& block : ret) {
-        std::cout<<"Block {"<<std::endl;
-        std::cout<<"\tr: "<<(int)block.r<<std::endl;
-        std::cout<<"\tc: "<<(int)block.c<<std::endl;
-        std::cout<<"\tlength: "<<(int)block.length<<std::endl;
-        std::cout<<"\torientation: "<<block.orientation<<std::endl;
-        std::cout<<"}"<<std::endl;
-        std::cout<<std::endl;
-    }
-    /**/
     return ret;
 }
 
@@ -173,7 +160,6 @@ std::vector<Block> get_blocks(const CImg<unsigned char>& game_image) {
             game_grid[(row-50)/50][(col-50)/50] = game_image(col, row, 0, 0) < 180;
         }
     }
-
     return get_blocks(game_grid);
 }
 
@@ -295,6 +281,29 @@ bool Puzzle::to_file(const std::string& path) const {
     file<<*this;
     file.close();
     return true;
+}
+
+CImg<unsigned char>& Puzzle::draw(CImg<unsigned char>& img) const {
+    static const int background_color[] = {106, 74, 36};
+    img.resize(600, 600, 1, 3).fill(0).draw_fill(0, 0, background_color);
+
+    static const int block_color[] = {200, 100, 30};
+    static const int block_outline_color[] = {0, 0, 0};
+    int x, y, w, h;
+    for (const auto& block : m_blocks) {
+        x = block.c*100;
+        y = block.r*100;
+        w = block.orientation ? 100*block.length : 100;
+        h = block.orientation ? 100 : 100*block.length;
+
+        img.draw_rectangle(x, y, x+w, y+h, block_color);
+        img.draw_rectangle(x, y, x+w, y+h, block_outline_color, 1, ~0);
+    }
+
+    static const int red_block_color[] = {200, 30, 30};
+    img.draw_rectangle(x, y, x+w, y+h, red_block_color);
+    img.draw_rectangle(x, y, x+w, y+h, block_outline_color, 1, ~0);
+    return img;
 }
 
 bool Puzzle::operator==(const Puzzle& rhs) const {
