@@ -1,5 +1,5 @@
 # UnblockMe
-Automatically solves Unblock Me puzzles
+Automatically solves Unblock Me puzzles. Check out this [blog post](http://nivent.github.io/blog/unblockme/) for information on how it works.
 
 <img src="https://github.com/NivenT/UnblockMe/blob/master/screenshots/img0.png" alt="Screenshot" width="400" height="400"/>
 
