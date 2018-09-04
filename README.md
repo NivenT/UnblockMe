@@ -1,7 +1,7 @@
 # UnblockMe
 Automatically solves Unblock Me puzzles. Check out this [blog post](http://nivent.github.io/blog/unblockme/) for information on how it works.
 
-<img src="https://github.com/NivenT/UnblockMe/blob/master/screenshots/img0.png" alt="Screenshot" width="400" height="400"/>
+<img src="https://nivent.github.io/images/blog/unblock-me/prog.gif" alt="Screenshot" width="400" height="400"/>
 
 This program loads an Unblock Me puzzle from a file (text or image), and then provides a step-by-step solution of the puzzle.
 
